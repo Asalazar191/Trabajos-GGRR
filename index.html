@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trabajos GGRR</title>
+    
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <style>
+        /* --- ESTILOS WEB --- */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #eef2f3; padding: 10px; color: #333; margin: 0;
+        }
+        .container { 
+            max-width: 850px; margin: auto; background: white; padding: 20px; 
+            border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
+        h1 { text-align: center; color: #1a2a6c; font-size: 1.5rem; margin-bottom: 15px; border-bottom: 2px solid #1a2a6c; padding-bottom: 10px; }
+        
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; }
+        
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #2c3e50; font-size: 0.9rem; }
+        
+        input[type="date"], input[type="text"], textarea { 
+            width: 100%; padding: 12px; border: 1px solid #dcdde1; border-radius: 8px; 
+            box-sizing: border-box; font-size: 16px; font-family: inherit; -webkit-appearance: none;
+        }
+
+        textarea { resize: none; overflow: hidden; min-height: 80px; }
+        
+        #editor-container { height: auto; min-height: 200px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; background: white; }
+        .ql-toolbar.ql-snow { border-top-left-radius: 8px; border-top-right-radius: 8px; background: #f9f9f9; }
+
+        .botones-container { display: flex; gap: 10px; margin-top: 20px; flex-direction: column; }
+        button { 
+            width: 100%; padding: 16px; border: none; border-radius: 10px; 
+            font-size: 16px; font-weight: bold; cursor: pointer; color: white;
+        }
+        .btn-limpiar { background: #636e72; }
+        .btn-pdf { background: #1a2a6c; }
+
+        @media (min-width: 600px) {
+            .botones-container { flex-direction: row; }
+            body { padding: 30px; }
+        }
+
+        /* --- ESTILOS PDF / IMPRESIÓN --- */
+        #pdf-template { display: none; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #pdf-template, #pdf-template * { visibility: visible; }
+            #pdf-template { 
+                display: block !important; 
+                position: absolute; left: 0; top: 0; width: 100%;
+                font-family: Arial, sans-serif;
+            }
+            .pdf-header { text-align: center; border-bottom: 3px solid #1a2a6c; margin-bottom: 15px; }
+            .pdf-info-row { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11pt; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+            .pdf-label { 
+                background-color: #f2f2f2 !important; padding: 8px; border-left: 6px solid #1a2a6c; 
+                font-weight: bold; font-size: 12pt; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+                margin-bottom: 5px; text-transform: uppercase;
+            }
+            .pdf-content-box { font-size: 11pt; line-height: 1.5; padding: 5px 10px; color: #000; }
+            .incidencias-activa { 
+                background-color: #fff9c4 !important; border: 1px solid #fbc02d !important; 
+                border-radius: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            }
+            .ql-editor ol, .ql-editor ul { padding-left: 20px; }
+            @page { margin: 1.5cm; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Trabajos diarios GGRR</h1>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="fecha">Día:</label>
+            <input type="date" id="fecha">
+        </div>
+        <div class="form-group">
+            <label for="responsable">Responsable:</label>
+            <input type="text" id="responsable" placeholder="Nombre y Apellidos">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Trabajos Realizados:</label>
+        <div id="editor-container"></div>
+    </div>
+
+    <div class="form-group">
+        <label for="incidencias">Incidencias:</label>
+        <textarea id="incidencias" placeholder="¿Hubo incidencias?"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="observaciones">Observaciones:</label>
+        <textarea id="observaciones" placeholder="Anotaciones extra..."></textarea>
+    </div>
+
+    <div class="botones-container">
+        <button class="btn-limpiar" onclick="if(confirm('¿Borrar todo?')) window.location.reload()">Limpiar Todo</button>
+        <button class="btn-pdf" onclick="generarArchivo()">GENERAR ARCHIVO</button>
+    </div>
+</div>
+
+<div id="pdf-template">
+    <div class="pdf-header"><h2>TRABAJOS DIARIOS GGRR</h2></div>
+    
+    <div class="pdf-info-row">
+        <div><strong>FECHA:</strong> <span id="pdf-fecha"></span></div>
+        <div><strong>RESPONSABLE:</strong> <span id="pdf-res"></span></div>
+    </div>
+
+    <div class="pdf-section" style="margin-bottom: 20px;">
+        <div class="pdf-label">TRABAJOS REALIZADOS</div>
+        <div id="pdf-trabajos" class="ql-editor pdf-content-box"></div>
+    </div>
+
+    <div class="pdf-section" style="margin-bottom: 20px;">
+        <div class="pdf-label">INCIDENCIAS</div>
+        <div id="cont-incidencias" style="padding: 5px;">
+            <div id="pdf-inc" class="pdf-content-box" style="white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <div class="pdf-section">
+        <div class="pdf-label">OBSERVACIONES / AÑADIDOS</div>
+        <div id="pdf-obs" class="pdf-content-box" style="white-space: pre-wrap;"></div>
+    </div>
+</div>
+
+<script>
+    // Iniciar Fecha
+    window.onload = function() { document.getElementById('fecha').value = new Date().toISOString().split('T')[0]; };
+
+    // Editor Quill
+    var quill = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: { toolbar: [['bold', 'italic'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']] }
+    });
+
+    // Auto-ajuste de texto
+    document.querySelectorAll('textarea').forEach(ta => {
+        ta.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
+    });
+
+    function generarArchivo() {
+        const fechaRaw = document.getElementById('fecha').value;
+        const responsable = document.getElementById('responsable').value || "No especificado";
+        const incidencias = document.getElementById('incidencias').value.trim();
+        const observaciones = document.getElementById('observaciones').value.trim();
+        
+        const partes = fechaRaw.split('-');
+        const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+        
+        // Asignar al PDF
+        document.getElementById('pdf-fecha').innerText = fechaFormateada;
+        document.getElementById('pdf-res').innerText = responsable;
+        document.getElementById('pdf-trabajos').innerHTML = (quill.getText().trim() === "") ? "No hay registros." : quill.root.innerHTML;
+        document.getElementById('pdf-obs').innerText = observaciones || "Sin observaciones.";
+
+        const contInc = document.getElementById('cont-incidencias');
+        const pdfInc = document.getElementById('pdf-inc');
+
+        if (incidencias === "") {
+            pdfInc.innerText = "No se reportaron incidencias.";
+            contInc.classList.remove('incidencias-activa');
+        } else {
+            pdfInc.innerText = incidencias;
+            contInc.classList.add('incidencias-activa');
+        }
+
+        // CAMBIAR TÍTULO DE LA PÁGINA TEMPORALMENTE (Para el nombre del archivo)
+        const nombreOriginal = document.title;
+        document.title = `Trabajos GGRR - ${partes[2]}-${partes[1]}-${partes[0]}`;
+
+        // Lanzar impresión
+        window.print();
+
+        // Restaurar título original
+        setTimeout(() => { document.title = nombreOriginal; }, 1000);
+    }
+</script>
+
+</body>
+</html>
