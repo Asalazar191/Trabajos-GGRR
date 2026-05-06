@@ -52,12 +52,19 @@
         #pdf-template { display: none; }
 
         @media print {
+            /* ESTA REGLA OCULTA LA URL, FECHA Y TÍTULO DEL NAVEGADOR */
+            @page { 
+                margin: 1cm; 
+            }
+
             body * { visibility: hidden; }
             #pdf-template, #pdf-template * { visibility: visible; }
             #pdf-template { 
                 display: block !important; 
                 position: absolute; left: 0; top: 0; width: 100%;
                 font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
             }
             .pdf-header { text-align: center; border-bottom: 3px solid #1a2a6c; margin-bottom: 15px; }
             .pdf-info-row { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 11pt; border-bottom: 1px solid #eee; padding-bottom: 10px; }
@@ -72,7 +79,6 @@
                 border-radius: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact;
             }
             .ql-editor ol, .ql-editor ul { padding-left: 20px; }
-            @page { margin: 1.5cm; }
         }
     </style>
 </head>
@@ -180,7 +186,7 @@
             contInc.classList.add('incidencias-activa');
         }
 
-        // CAMBIAR TÍTULO DE LA PÁGINA TEMPORALMENTE (Para el nombre del archivo)
+        // CAMBIAR TÍTULO DE LA PÁGINA TEMPORALMENTE
         const nombreOriginal = document.title;
         document.title = `Trabajos GGRR - ${partes[2]}-${partes[1]}-${partes[0]}`;
 
